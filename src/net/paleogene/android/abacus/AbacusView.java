@@ -14,31 +14,10 @@ import android.view.SurfaceView;
 public class AbacusView extends SurfaceView
 implements SurfaceHolder.Callback {
 	
+	/** Indicates whether the surface has been created and is ready to draw */
+	private boolean mRun = false;
+	
 	class AbacusThread extends Thread {
-		
-		/** Handle to the surface manager object we interact with */
-		private SurfaceHolder mSurfaceHolder;
-		
-		private Handler mHandler;
-		
-		private Context mContext;
-		
-		/**
-		 * Current width of the surface/canvas.
-		 * 
-		 * @see #setSurfaceSize
-		 */
-		private int mCanvasWidth = 1;
-		
-		/**
-		 * Current height of the surface/canvas.
-		 * 
-		 * @see #setSurfaceSize
-		 */
-		private int mCanvasHeight = 1;
-		
-		/** Indicates whether the surface has been created and is ready to draw */
-		private boolean mRun = false;
 		
 		public AbacusThread(SurfaceHolder surfaceHolder, Context context,
 				Handler handler) {
@@ -59,13 +38,6 @@ implements SurfaceHolder.Callback {
 			mRun = b;
 		}
 		
-		public void setSurfaceSize(int width, int height) {
-			synchronized ( mSurfaceHolder ) {
-				mCanvasWidth  = width;
-				mCanvasHeight = height;
-			}
-		}
-		
 		@Override
 		public void run() {
 			while ( mRun ) {
@@ -83,6 +55,27 @@ implements SurfaceHolder.Callback {
 		}
 	}
 	
+	/** Handle to the surface manager object we interact with */
+	private SurfaceHolder mSurfaceHolder;
+	
+	private Handler mHandler;
+	
+	private Context mContext;
+	
+	/**
+	 * Current width of the surface/canvas.
+	 * 
+	 * @see #setSurfaceSize
+	 */
+	private int mCanvasWidth = 1;
+	
+	/**
+	 * Current height of the surface/canvas.
+	 * 
+	 * @see #setSurfaceSize
+	 */
+	private int mCanvasHeight = 1;
+	
 	private AbacusThread thread;
 	
 	private float pointX = 200;
@@ -91,6 +84,13 @@ implements SurfaceHolder.Callback {
 	private float lastY = 0;
 	
 	private boolean moving = false;
+	
+	public void setSurfaceSize(int width, int height) {
+		synchronized ( mSurfaceHolder ) {
+			mCanvasWidth  = width;
+			mCanvasHeight = height;
+		}
+	}
 
 	public AbacusView(Context context, AttributeSet attrs) {
 		super(context, attrs);
@@ -120,7 +120,7 @@ implements SurfaceHolder.Callback {
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
 			int height) {
-		thread.setSurfaceSize(width, height);
+		setSurfaceSize(width, height);
 	}
 
 	@Override
