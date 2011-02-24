@@ -4,8 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.os.Handler;
-import android.os.Message;
+import android.graphics.Point;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -14,16 +13,10 @@ import android.view.SurfaceView;
 public class AbacusView extends SurfaceView
 implements SurfaceHolder.Callback {
 	
-	/** Indicates whether the surface has been created and is ready to draw */
-	private boolean mRun = false;
-	
 	class AbacusThread extends Thread {
 		
-		public AbacusThread(SurfaceHolder surfaceHolder, Context context,
-				Handler handler) {
+		public AbacusThread(SurfaceHolder surfaceHolder, Context context) {
 			mSurfaceHolder = surfaceHolder;
-			mHandler = handler;
-			mContext = context;
 		}
 		
 		/**
@@ -55,43 +48,82 @@ implements SurfaceHolder.Callback {
 		}
 	}
 	
+	class Row {
+		private Point position;
+		private int width;
+		private int beadSize;
+		private int numBeads;
+		
+		private int[] beads;
+		
+		private Paint beadPaint, rowPaint;
+				
+		public Row(Point position, int width, int beadSize, int numBeads) {
+			this.position = position;
+			this.width = width;
+			this.beadSize = beadSize;
+			this.numBeads = numBeads;
+			
+			beadPaint = new Paint();
+			beadPaint.setColor(Color.BLUE);
+			beadPaint.setStyle(Paint.Style.FILL);
+			
+			rowPaint = new Paint();
+			rowPaint.setColor(Color.argb(255, 112, 82, 46));
+			rowPaint.setStyle(Paint.Style.FILL);
+			
+			beads = new int[numBeads];
+			for ( int i = 0; i < numBeads; i++ ) {
+				beads[i] = 2 * i * beadSize;
+			}
+		}
+		
+		public void moveBeadToCoordinate(int i, float x) {
+			beads[i] = (int) x - position.x - beadSize;
+		}
+		
+		public void draw(Canvas canvas) {
+			int y = position.y + beadSize;
+			
+			canvas.drawRect(position.x - 10,
+							y - 5,
+							position.x + width + 2 * beadSize + 10,
+							y + 5,
+							rowPaint);
+			
+			for ( int i = 0; i < numBeads; i++ ) {
+				canvas.drawCircle((float) position.x + beadSize + beads[i],
+								  (float) y,
+								  beadSize,
+								  beadPaint);
+			}
+		}
+		
+		public int getBeadAt(float x, float y) {
+			for ( int i = 0; i < numBeads; i++ ) {
+				double d = Math.sqrt(Math.pow(beads[i] + position.x + beadSize - x, 2)
+									+ Math.pow(position.y + beadSize - y, 2));
+				if ( d <= (double) beadSize )
+					return i;
+			}
+			return -1;
+		}
+	}
+	
+	/** Indicates whether the surface has been created and is ready to draw */
+	private boolean mRun = false;
+	
 	/** Handle to the surface manager object we interact with */
 	private SurfaceHolder mSurfaceHolder;
 	
-	private Handler mHandler;
-	
-	private Context mContext;
-	
-	/**
-	 * Current width of the surface/canvas.
-	 * 
-	 * @see #setSurfaceSize
-	 */
-	private int mCanvasWidth = 1;
-	
-	/**
-	 * Current height of the surface/canvas.
-	 * 
-	 * @see #setSurfaceSize
-	 */
-	private int mCanvasHeight = 1;
-	
 	private AbacusThread thread;
 	
-	private float pointX = 200;
-	private float pointY = 200;
-	private float lastX = 0;
-	private float lastY = 0;
+	private Row row;
 	
-	private boolean moving = false;
+	private int motionBead = -1;
+	private float motionStartX;
+	private float motionStartY;
 	
-	public void setSurfaceSize(int width, int height) {
-		synchronized ( mSurfaceHolder ) {
-			mCanvasWidth  = width;
-			mCanvasHeight = height;
-		}
-	}
-
 	public AbacusView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 
@@ -99,30 +131,24 @@ implements SurfaceHolder.Callback {
 		SurfaceHolder holder = getHolder();
 		holder.addCallback(this);
 		
+		row = new Row(new Point(50, 50), 320, 25, 1);
+		
 		// Just create the thread; it's started in surfaceCreated()
-		thread = new AbacusThread(holder, context, new Handler() {
-			@Override
-			public void handleMessage(Message m) {
-			}
-		});
+		thread = new AbacusThread(holder, context);
 	}
 	
 	private void doDraw(Canvas canvas) {
+		
 		canvas.drawColor(Color.BLACK);
-		
-		Paint paint = new Paint();
-		paint.setColor(Color.GREEN);
-		paint.setStyle(Paint.Style.FILL);
-		
-		canvas.drawCircle(pointX, pointY, 25, paint);
+		row.draw(canvas);
 	}
 	
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
 			int height) {
-		setSurfaceSize(width, height);
+		// TODO Something or other
 	}
-
+	
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		thread.setRunning(true);
@@ -148,26 +174,19 @@ implements SurfaceHolder.Callback {
 	public boolean onTouchEvent(MotionEvent event) {
 		switch ( event.getAction() ) {
 		case MotionEvent.ACTION_DOWN:
-			if ( ( Math.abs( pointX - event.getX() ) <= 25 )
-					&& ( Math.abs( pointY - event.getY() ) <= 25 ) ) { 
-				moving = true;
-				lastX = event.getX();
-				lastY = event.getY();
-			}
+			motionBead = row.getBeadAt(event.getX(), event.getY());
+			motionStartX = event.getX();
+			motionStartY = event.getY();
+			return true;
+			
+		case MotionEvent.ACTION_MOVE:
+			if ( motionBead > -1 )
+				row.moveBeadToCoordinate(motionBead, event.getX());
 			return true;
 			
 		case MotionEvent.ACTION_UP:
 		case MotionEvent.ACTION_CANCEL:
-			moving = false;
-			return true;
-			
-		case MotionEvent.ACTION_MOVE:
-			if ( moving ) {
-				pointX += event.getX() - lastX;
-				pointY += event.getY() - lastY;
-				lastX = event.getX();
-				lastY = event.getY();
-			}
+			motionBead = -1;
 			return true;
 			
 		default:
