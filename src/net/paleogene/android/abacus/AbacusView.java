@@ -100,7 +100,8 @@ implements SurfaceHolder.Callback {
         }
 
         public void moveBeadToCoordinate(int i, int x) {
-            beads[i] = (int) x - beadRX;
+            int dest = (int) x - position.x - beadRX;
+            beads[i] = dest;
         }
 
         public void draw(Canvas canvas) {
@@ -207,9 +208,7 @@ implements SurfaceHolder.Callback {
 
         case MotionEvent.ACTION_MOVE:
             if (motionBead > -1) {
-                Point rowPosition = row.getPosition();
-                int rowX = ( (int) event.getX() ) - rowPosition.x;
-                row.moveBeadToCoordinate(motionBead, rowX);
+                row.moveBeadToCoordinate(motionBead, (int) event.getX());
             } else {
                 motionBead = row.getBeadAt((int) event.getX(), (int) event.getY());
                 motionStartX = event.getX();
