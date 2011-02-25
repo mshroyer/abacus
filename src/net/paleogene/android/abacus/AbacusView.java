@@ -204,11 +204,6 @@ implements SurfaceHolder.Callback {
     public boolean onTouchEvent(MotionEvent event) {
         switch ( event.getAction() ) {
         case MotionEvent.ACTION_DOWN:
-            motionBead = row.getBeadAt((int) event.getX(), (int) event.getY());
-            motionStartX = event.getX();
-            motionStartY = event.getY();
-            return true;
-
         case MotionEvent.ACTION_MOVE:
             if (motionBead > -1) {
                 row.moveBeadToCoordinate(motionBead, (int) event.getX());
