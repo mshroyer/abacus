@@ -176,7 +176,7 @@ implements SurfaceHolder.Callback {
         SurfaceHolder holder = getHolder();
         holder.addCallback(this);
 
-        row = new Row(new Point(50, 50), 320, 13, 25, 10);
+        row = new Row(new Point(50, 50), 372, 15, 25, 10);
 
         // Just create the thread; it's started in surfaceCreated()
         thread = new AbacusThread(holder);
