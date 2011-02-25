@@ -182,8 +182,13 @@ implements SurfaceHolder.Callback {
             return true;
 
         case MotionEvent.ACTION_MOVE:
-            if ( motionBead > -1 )
+            if (motionBead > -1) {
                 row.moveBeadToCoordinate(motionBead, event.getX());
+            } else {
+                motionBead = row.getBeadAt(event.getX(), event.getY());
+                motionStartX = event.getX();
+                motionStartY = event.getY();
+            }
             return true;
 
         case MotionEvent.ACTION_UP:
