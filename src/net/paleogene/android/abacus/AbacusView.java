@@ -98,13 +98,30 @@ implements SurfaceHolder.Callback {
         public Point getPosition() {
             return position;
         }
+        
+        public int moveBeadTo(int i, int x) {
+            return moveBeadToInternal(i, x - position.x - beadRX);
+        }
 
-        public void moveBeadToCoordinate(int i, int x) {
-            int dest = (int) x - position.x - beadRX;
-
-            dest = ( dest >= beadRX )         ? dest : beadRX;
-            dest = ( dest <= width - beadRX ) ? dest : width - beadRX;
-            beads[i] = dest;
+        private int moveBeadToInternal(int i, int x) {
+            // Don't allow beads to be dragged off the ends of the row
+            x = ( x >= beadRX )         ? x : beadRX;
+            x = ( x <= width - beadRX ) ? x : width - beadRX;
+            
+            // Handle collisions between beads
+            if ( x > beads[i] ) {
+                if ( ( i < numBeads - 1 )
+                        && ( x + beadRX > beads[i+1] - beadRX ) ) {
+                    x = moveBeadToInternal(i + 1, x + 2*beadRX) - 2*beadRX;
+                }
+            } else if ( x < beads[i] ){
+                if ( ( i > 0 )
+                        && ( x - beadRX < beads[i-1] + beadRX ) ) {
+                    x = moveBeadToInternal(i - 1, x - 2*beadRX) + 2*beadRX;
+                }
+            }
+            
+            return beads[i] = x;
         }
 
         public void draw(Canvas canvas) {
@@ -159,7 +176,7 @@ implements SurfaceHolder.Callback {
         SurfaceHolder holder = getHolder();
         holder.addCallback(this);
 
-        row = new Row(new Point(50, 50), 320, 13, 25, 1);
+        row = new Row(new Point(50, 50), 320, 13, 25, 10);
 
         // Just create the thread; it's started in surfaceCreated()
         thread = new AbacusThread(holder);
@@ -206,7 +223,7 @@ implements SurfaceHolder.Callback {
         case MotionEvent.ACTION_DOWN:
         case MotionEvent.ACTION_MOVE:
             if (motionBead > -1) {
-                row.moveBeadToCoordinate(motionBead, (int) event.getX());
+                row.moveBeadTo(motionBead, (int) event.getX());
             } else {
                 motionBead = row.getBeadAt((int) event.getX(), (int) event.getY());
                 motionStartX = event.getX();
