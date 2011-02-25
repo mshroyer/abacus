@@ -101,6 +101,9 @@ implements SurfaceHolder.Callback {
 
         public void moveBeadToCoordinate(int i, int x) {
             int dest = (int) x - position.x - beadRX;
+
+            dest = ( dest >= beadRX )         ? dest : beadRX;
+            dest = ( dest <= width - beadRX ) ? dest : width - beadRX;
             beads[i] = dest;
         }
 
