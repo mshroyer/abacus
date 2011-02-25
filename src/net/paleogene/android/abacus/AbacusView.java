@@ -10,6 +10,7 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.TextView;
 
 public class AbacusView extends SurfaceView
 implements SurfaceHolder.Callback {
@@ -49,7 +50,7 @@ implements SurfaceHolder.Callback {
         }
     }
     
-    class Abacus {
+    class RowSet {
         private Point position;
         private int numRows;
         public Row[] rows;
@@ -58,7 +59,7 @@ implements SurfaceHolder.Callback {
         private int width;
         private int beadRY;
         
-        public Abacus(Point position, int width, int beadRX, int beadRY,
+        public RowSet(Point position, int width, int beadRX, int beadRY,
                 int numBeads, int numRows) {
             this.position = position;
             this.numRows = numRows;
@@ -87,6 +88,21 @@ implements SurfaceHolder.Callback {
                     return rows[i];
             }
             return null;
+        }
+        
+        public int getValue() {
+            int accumulator = 0;
+            
+            for ( Row r : rows ) {
+                accumulator *= 10;
+                int rval = r.getValue();
+                if ( rval > -1 )
+                    accumulator += rval;
+                else
+                    return -1;
+            }
+            
+            return accumulator;
         }
         
         public void draw(Canvas canvas) {
@@ -192,6 +208,18 @@ implements SurfaceHolder.Callback {
             
             return beads[i] = x;
         }
+        
+        public int getValue() {
+            if ( beads[0] >= 4*beadRX )
+                return 9;
+            for ( int i = 0; i < numBeads - 1; i++ )
+                if ( beads[i+1] - beads[i] >= 5*beadRX ) 
+                    return 8 - i;
+            if ( width - beads[numBeads-1] >= 4*beadRX )
+                return 0;
+            
+            return -1;
+        }
 
         public void draw(Canvas canvas) {
             final int rowThickness = 5;
@@ -232,13 +260,11 @@ implements SurfaceHolder.Callback {
 
     private AbacusThread thread;
 
-    private Abacus abacus;
+    private RowSet rs;
 
     private Row motionRow = null;
     private int motionBead = -1;
-    private float motionStartX;
-    private float motionStartY;
-
+    
     public AbacusView(Context context, AttributeSet attrs) {
         super(context, attrs);
 
@@ -246,16 +272,25 @@ implements SurfaceHolder.Callback {
         SurfaceHolder holder = getHolder();
         holder.addCallback(this);
 
-        abacus = new Abacus(new Point(40, 50), 372, 15, 25, 10, 5);
+        rs = new RowSet(new Point(60, 50), 330, 15, 25, 9, 5);
 
         // Just create the thread; it's started in surfaceCreated()
         thread = new AbacusThread(holder);
     }
 
     private void doDraw(Canvas canvas) {
-
         canvas.drawColor(Color.BLACK);
-        abacus.draw(canvas);
+        rs.draw(canvas);
+    }
+    
+    private void showReadout() {
+        if ( Abacus.readout != null ) {
+            int result = rs.getValue();
+            if ( result > -1 )
+                Abacus.readout.setText(Integer.toString(result));
+            else
+                Abacus.readout.setText("");
+        }
     }
 
     @Override
@@ -270,6 +305,7 @@ implements SurfaceHolder.Callback {
             thread = new AbacusThread(holder);
         thread.setRunning(true);
         thread.start();
+        showReadout();
     }
 
     @Override
@@ -297,16 +333,15 @@ implements SurfaceHolder.Callback {
             } else {
                 int x = (int) event.getX();
                 int y = (int) event.getY();
-                motionRow = abacus.getRowAt(x, y);
+                motionRow = rs.getRowAt(x, y);
                 if ( motionRow != null )
                     motionBead = motionRow.getBeadAt(x, y);
-                motionStartX = event.getX();
-                motionStartY = event.getY();
             }
             return true;
 
         case MotionEvent.ACTION_UP:
         case MotionEvent.ACTION_CANCEL:
+            if ( motionBead > -1 ) showReadout();
             motionRow = null;
             motionBead = -1;
             return true;

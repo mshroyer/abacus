@@ -1,12 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
 
     <net.paleogene.android.abacus.AbacusView
-      android:id="@+id/abacus"
-      android:layout_width="fill_parent"
-      android:layout_height="fill_parent"
-      />
+        android:id="@+id/abacus"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="10"
+        />
+      
+    <TextView
+        android:id="@+id/readout"
+        android:gravity="center_horizontal"
+        android:text=""
+        android:textSize="16pt"
+        android:layout_width="fill_parent"
+        android:layout_height="120dip"
+        android:layout_weight="1"
+        />
 
-</FrameLayout>
+</LinearLayout>
