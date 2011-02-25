@@ -48,6 +48,74 @@ implements SurfaceHolder.Callback {
             }
         }
     }
+    
+    class Abacus {
+        private Point position;
+        private int numRows;
+        public Row[] rows;
+        private Paint paint;
+        final int borderWidth = 10;
+        private int width;
+        private int beadRY;
+        
+        public Abacus(Point position, int width, int beadRX, int beadRY,
+                int numBeads, int numRows) {
+            this.position = position;
+            this.numRows = numRows;
+            this.rows = new Row[numRows];
+            this.width = width;
+            this.beadRY = beadRY;
+            
+            for ( int i = 0; i < numRows; i++ ) {
+                Point rowPosition = new Point();
+                rowPosition.x = position.x + borderWidth;
+                rowPosition.y = position.y + (3*i+1)*beadRY + borderWidth;
+                this.rows[i] = new Row(rowPosition, width, beadRX, beadRY, numBeads);
+            }
+            
+            paint = new Paint();
+            paint.setColor(Color.argb(255, 188, 157, 118)); // brownish
+            paint.setStyle(Paint.Style.FILL);
+        }
+        
+        public Row getRowAt(int x, int y) {
+            for ( int i = 0; i < numRows; i++ ) {
+                if ( ( x >= position.x + borderWidth )
+                        && ( x <= position.x + borderWidth + width )
+                        && ( y >= position.y + (3*i+1)*beadRY + borderWidth )
+                        && ( y <= position.y + (3*i+3)*beadRY + borderWidth ) )
+                    return rows[i];
+            }
+            return null;
+        }
+        
+        public void draw(Canvas canvas) {
+            canvas.drawRect(position.x,
+                            position.y,
+                            position.x + width + 2*borderWidth,
+                            position.y + borderWidth,
+                            paint);
+            canvas.drawRect(position.x + width + borderWidth,
+                            position.y,
+                            position.x + width + 2*borderWidth,
+                            position.y + (3*numRows+1)*beadRY + 2*borderWidth,
+                            paint);
+            canvas.drawRect(position.x,
+                            position.y + (3*numRows+1)*beadRY + borderWidth,
+                            position.x + width + 2*borderWidth,
+                            position.y + (3*numRows+1)*beadRY + 2*borderWidth,
+                            paint);
+            canvas.drawRect(position.x,
+                            position.y,
+                            position.x + borderWidth,
+                            position.y + (3*numRows+1)*beadRY + 2*borderWidth,
+                            paint);
+
+            for ( Row r : rows ) {
+                r.draw(canvas);
+            }
+        }
+    }
 
     class Row {
         
@@ -71,7 +139,7 @@ implements SurfaceHolder.Callback {
 
         private Paint beadPaint, rowPaint;
         private RectF beadRectF = new RectF();
-
+        
         public Row(Point position, int width, int beadRX, int beadRY,
                 int numBeads) {
             this.position = position;
@@ -81,11 +149,12 @@ implements SurfaceHolder.Callback {
             this.numBeads = numBeads;
 
             beadPaint = new Paint();
-            beadPaint.setColor(Color.BLUE);
+            beadPaint.setColor(Color.argb(255, 73, 137, 30));
             beadPaint.setStyle(Paint.Style.FILL);
 
             rowPaint = new Paint();
-            rowPaint.setColor(Color.argb(255, 112, 82, 46)); // brownish
+            rowPaint.setColor(Color.argb(255, 188, 157, 118)); // brownish
+            //rowPaint.setColor(Color.argb(255, 112, 82, 46)); // brownish
             rowPaint.setStyle(Paint.Style.FILL);
 
             /* Place the beads starting on the left... */
@@ -163,8 +232,9 @@ implements SurfaceHolder.Callback {
 
     private AbacusThread thread;
 
-    private Row row;
+    private Abacus abacus;
 
+    private Row motionRow = null;
     private int motionBead = -1;
     private float motionStartX;
     private float motionStartY;
@@ -176,7 +246,7 @@ implements SurfaceHolder.Callback {
         SurfaceHolder holder = getHolder();
         holder.addCallback(this);
 
-        row = new Row(new Point(50, 50), 372, 15, 25, 10);
+        abacus = new Abacus(new Point(40, 50), 372, 15, 25, 10, 5);
 
         // Just create the thread; it's started in surfaceCreated()
         thread = new AbacusThread(holder);
@@ -185,7 +255,7 @@ implements SurfaceHolder.Callback {
     private void doDraw(Canvas canvas) {
 
         canvas.drawColor(Color.BLACK);
-        row.draw(canvas);
+        abacus.draw(canvas);
     }
 
     @Override
@@ -223,9 +293,13 @@ implements SurfaceHolder.Callback {
         case MotionEvent.ACTION_DOWN:
         case MotionEvent.ACTION_MOVE:
             if (motionBead > -1) {
-                row.moveBeadTo(motionBead, (int) event.getX());
+                motionRow.moveBeadTo(motionBead, (int) event.getX());
             } else {
-                motionBead = row.getBeadAt((int) event.getX(), (int) event.getY());
+                int x = (int) event.getX();
+                int y = (int) event.getY();
+                motionRow = abacus.getRowAt(x, y);
+                if ( motionRow != null )
+                    motionBead = motionRow.getBeadAt(x, y);
                 motionStartX = event.getX();
                 motionStartY = event.getY();
             }
@@ -233,6 +307,7 @@ implements SurfaceHolder.Callback {
 
         case MotionEvent.ACTION_UP:
         case MotionEvent.ACTION_CANCEL:
+            motionRow = null;
             motionBead = -1;
             return true;
 
