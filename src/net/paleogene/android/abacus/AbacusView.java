@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -49,19 +50,34 @@ implements SurfaceHolder.Callback {
     }
 
     class Row {
+        
+        /** Location of the row's upper-right corner on the canvas */
         private Point position;
+        
+        /** Total width of the row in pixels */
         private int width;
-        private int beadSize;
+        
+        /** Half the beads' width */
+        private int beadRX;
+        
+        /** Half the beads' height */
+        private int beadRY;
+        
+        /** The number of beads on this row */
         private int numBeads;
 
+        /** The horizontal location of the center of each bead on the row */
         private int[] beads;
 
         private Paint beadPaint, rowPaint;
+        private RectF beadRectF = new RectF();
 
-        public Row(Point position, int width, int beadSize, int numBeads) {
+        public Row(Point position, int width, int beadRX, int beadRY,
+                int numBeads) {
             this.position = position;
             this.width = width;
-            this.beadSize = beadSize;
+            this.beadRX = beadRX;
+            this.beadRY = beadRY;
             this.numBeads = numBeads;
 
             beadPaint = new Paint();
@@ -69,42 +85,50 @@ implements SurfaceHolder.Callback {
             beadPaint.setStyle(Paint.Style.FILL);
 
             rowPaint = new Paint();
-            rowPaint.setColor(Color.argb(255, 112, 82, 46));
+            rowPaint.setColor(Color.argb(255, 112, 82, 46)); // brownish
             rowPaint.setStyle(Paint.Style.FILL);
 
+            /* Place the beads starting on the left... */
             beads = new int[numBeads];
             for ( int i = 0; i < numBeads; i++ ) {
-                beads[i] = 2 * i * beadSize;
+                beads[i] = ( 2 * i + 1 ) * beadRX;
             }
         }
+        
+        public Point getPosition() {
+            return position;
+        }
 
-        public void moveBeadToCoordinate(int i, float x) {
-            beads[i] = (int) x - position.x - beadSize;
+        public void moveBeadToCoordinate(int i, int x) {
+            beads[i] = (int) x - beadRX;
         }
 
         public void draw(Canvas canvas) {
-            int y = position.y + beadSize;
+            final int rowThickness = 5;
 
-            canvas.drawRect(position.x - 10,
-                            y - 5,
-                            position.x + width + 2 * beadSize + 10,
-                            y + 5,
+            canvas.drawRect(position.x,
+                            position.y + beadRY - rowThickness,
+                            position.x + width,
+                            position.y + beadRY + rowThickness,
                             rowPaint);
 
             for ( int i = 0; i < numBeads; i++ ) {
-                canvas.drawCircle((float) position.x + beadSize + beads[i],
-                                  (float) y,
-                                  beadSize,
-                                  beadPaint);
+                beadRectF.left   = (float) ( position.x + beads[i] - beadRX );
+                beadRectF.right  = (float) ( position.x + beads[i] + beadRX );
+                beadRectF.top    = (float) ( position.y );
+                beadRectF.bottom = (float) ( position.y + 2 * beadRY );
+                canvas.drawOval(beadRectF, beadPaint);
             }
         }
 
-        public int getBeadAt(float x, float y) {
+        public int getBeadAt(int x, int y) {
             for ( int i = 0; i < numBeads; i++ ) {
-                double d = Math.sqrt(Math.pow(beads[i] + position.x + beadSize - x, 2)
-                                    + Math.pow(position.y + beadSize - y, 2));
-                if ( d <= (double) beadSize )
+                if ( ( x >= ( position.x + beads[i] - beadRX ) ) 
+                        && ( x <= ( position.x + beads[i] + beadRX ) )
+                        && ( y >= ( position.y ) )
+                        && ( y <= ( position.y + 2 * beadRY ) ) ) {
                     return i;
+                }
             }
             return -1;
         }
@@ -131,7 +155,7 @@ implements SurfaceHolder.Callback {
         SurfaceHolder holder = getHolder();
         holder.addCallback(this);
 
-        row = new Row(new Point(50, 50), 320, 25, 1);
+        row = new Row(new Point(50, 50), 320, 13, 25, 1);
 
         // Just create the thread; it's started in surfaceCreated()
         thread = new AbacusThread(holder);
@@ -176,16 +200,18 @@ implements SurfaceHolder.Callback {
     public boolean onTouchEvent(MotionEvent event) {
         switch ( event.getAction() ) {
         case MotionEvent.ACTION_DOWN:
-            motionBead = row.getBeadAt(event.getX(), event.getY());
+            motionBead = row.getBeadAt((int) event.getX(), (int) event.getY());
             motionStartX = event.getX();
             motionStartY = event.getY();
             return true;
 
         case MotionEvent.ACTION_MOVE:
             if (motionBead > -1) {
-                row.moveBeadToCoordinate(motionBead, event.getX());
+                Point rowPosition = row.getPosition();
+                int rowX = ( (int) event.getX() ) - rowPosition.x;
+                row.moveBeadToCoordinate(motionBead, rowX);
             } else {
-                motionBead = row.getBeadAt(event.getX(), event.getY());
+                motionBead = row.getBeadAt((int) event.getX(), (int) event.getY());
                 motionStartX = event.getX();
                 motionStartY = event.getY();
             }
