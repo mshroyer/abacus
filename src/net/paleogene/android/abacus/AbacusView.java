@@ -15,7 +15,7 @@ implements SurfaceHolder.Callback {
 
     class AbacusThread extends Thread {
 
-        public AbacusThread(SurfaceHolder surfaceHolder, Context context) {
+        public AbacusThread(SurfaceHolder surfaceHolder) {
             mSurfaceHolder = surfaceHolder;
         }
 
@@ -134,7 +134,7 @@ implements SurfaceHolder.Callback {
         row = new Row(new Point(50, 50), 320, 25, 1);
 
         // Just create the thread; it's started in surfaceCreated()
-        thread = new AbacusThread(holder, context);
+        thread = new AbacusThread(holder);
     }
 
     private void doDraw(Canvas canvas) {
@@ -151,6 +151,8 @@ implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
+        if (thread.getState() == Thread.State.TERMINATED)
+            thread = new AbacusThread(holder);
         thread.setRunning(true);
         thread.start();
     }
