@@ -15,6 +15,9 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.TextView;
 
+/**
+ * View that draws, handles touch events for a visual abacus.
+ */
 public class AbacusView extends SurfaceView
 implements SurfaceHolder.Callback {
 
@@ -93,6 +96,14 @@ implements SurfaceHolder.Callback {
             return null;
         }
         
+        /**
+         * Calculate the total value of all rows in the abacus.  If any of
+         * the rows have an indeterminate value (as signaled by a -1 returned
+         * by that row's getValue() method, the entire abacus is considered
+         * indeterminate and this method will also return -1.
+         * 
+         * @return Current value on the abacus, or -1 if indeterminate
+         */
         public int getValue() {
             int accumulator = 0;
             
@@ -217,6 +228,11 @@ implements SurfaceHolder.Callback {
             return beads[i] = x;
         }
         
+        /**
+         * Get the row's current value
+         * 
+         * @return Current value set on the row, or -1 if indeterminate
+         */
         public int getValue() {
             if ( beads[0] >= 4*beadRX )
                 return 9;
