@@ -304,7 +304,7 @@ implements SurfaceHolder.Callback {
             if ( result > -1 )
                 Abacus.readout.setText(Integer.toString(result));
             else
-                Abacus.readout.setText("");
+                Abacus.readout.setText("?");
         }
     }
 
