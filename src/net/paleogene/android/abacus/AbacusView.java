@@ -331,11 +331,28 @@ implements SurfaceHolder.Callback {
             if (motionBead > -1) {
                 motionRow.moveBeadTo(motionBead, (int) event.getX());
             } else {
-                int x = (int) event.getX();
-                int y = (int) event.getY();
-                motionRow = rs.getRowAt(x, y);
-                if ( motionRow != null )
-                    motionBead = motionRow.getBeadAt(x, y);
+                int x, y;
+                
+                /* Process historical events so that beads don't "slip" */
+                for ( int i = 0; i < event.getHistorySize(); i++ ) {
+                    x = (int) event.getHistoricalX(i);
+                    y = (int) event.getHistoricalY(i);
+                    
+                    motionRow = rs.getRowAt(x, y);
+                    if ( motionRow != null ) {
+                        motionBead = motionRow.getBeadAt(x, y);
+                        if ( motionBead > -1 )
+                            break;
+                    }
+                }
+
+                if ( motionBead == -1 ) {
+                    x = (int) event.getX();
+                    y = (int) event.getY();
+                    motionRow = rs.getRowAt(x, y);
+                    if ( motionRow != null )
+                        motionBead = motionRow.getBeadAt(x, y);
+                }
             }
             return true;
 
