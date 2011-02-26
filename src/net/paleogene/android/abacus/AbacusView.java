@@ -1,11 +1,14 @@
 package net.paleogene.android.abacus;
 
 import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.RectF;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -156,6 +159,8 @@ implements SurfaceHolder.Callback {
         private Paint beadPaint, rowPaint;
         private RectF beadRectF = new RectF();
         
+        private Drawable beadImg;
+        
         public Row(Point position, int width, int beadRX, int beadRY,
                 int numBeads) {
             this.position = position;
@@ -163,6 +168,9 @@ implements SurfaceHolder.Callback {
             this.beadRX = beadRX;
             this.beadRY = beadRY;
             this.numBeads = numBeads;
+            
+            Resources res = getResources();
+            beadImg = res.getDrawable(R.drawable.bead);
 
             beadPaint = new Paint();
             beadPaint.setColor(Color.argb(255, 73, 137, 30));
@@ -231,11 +239,18 @@ implements SurfaceHolder.Callback {
                             rowPaint);
 
             for ( int i = 0; i < numBeads; i++ ) {
+                /*
                 beadRectF.left   = (float) ( position.x + beads[i] - beadRX );
                 beadRectF.right  = (float) ( position.x + beads[i] + beadRX );
                 beadRectF.top    = (float) ( position.y );
                 beadRectF.bottom = (float) ( position.y + 2 * beadRY );
                 canvas.drawOval(beadRectF, beadPaint);
+                */
+                beadImg.setBounds(position.x + beads[i] - beadRX,
+                                  position.y,
+                                  position.x + beads[i] + beadRX,
+                                  position.y + 2*beadRY);
+                beadImg.draw(canvas);
             }
         }
 
