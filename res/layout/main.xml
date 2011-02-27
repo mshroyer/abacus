@@ -17,7 +17,7 @@
         android:text=""
         android:textSize="16pt"
         android:layout_width="fill_parent"
-        android:layout_height="120dip"
+        android:layout_height="120dp"
         android:layout_weight="1"
         />
 

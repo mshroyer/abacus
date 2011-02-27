@@ -8,7 +8,11 @@
     <application android:icon="@drawable/icon" android:label="@string/app_name">
         <activity android:name=".Abacus"
                   android:label="@string/app_name"
-                  android:screenOrientation="portrait">
+                  android:screenOrientation="portrait"
+                  android:anyDensity="true"
+                  android:smallScreens="false"
+                  android:normalScreens="true"
+                  android:largeScreens="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
