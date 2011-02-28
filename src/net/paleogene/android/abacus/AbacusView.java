@@ -338,7 +338,7 @@ implements SurfaceHolder.Callback {
             int height) {
         mCanvasWidth = width;
         mCanvasHeight = height;
-        rs = new RowSet(mCanvasWidth, mCanvasHeight, 5);
+        rs = new RowSet(mCanvasWidth, mCanvasHeight, 6);
         
         // TODO This part should really be in surfaceCreated()...
         thread.setRunning(true);
