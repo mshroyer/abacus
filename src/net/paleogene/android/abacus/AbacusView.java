@@ -239,7 +239,7 @@ implements SurfaceHolder.Callback {
             if ( beads[0] >= 1.5 * beadWidth )
                 return 9;
             for ( int i = 0; i < numBeads - 1; i++ )
-                if ( beads[i+1] - beads[i] >= 1.5 * beadWidth ) 
+                if ( beads[i+1] - beads[i] >= 2.5 * beadWidth ) 
                     return 8 - i;
             if ( beads[numBeads-1] <= width - 2.5 * beadWidth )
                 return 0;
