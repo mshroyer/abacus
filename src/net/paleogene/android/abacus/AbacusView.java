@@ -71,12 +71,14 @@ implements SurfaceHolder.Callback {
             this.beadWidth = Math.min(height/(3*numRows+2), width/13);
             this.beadHeight = 2 * beadWidth;
             
-            this.position = new Point(0, 0);
             this.numRows = numRows;
             this.rows = new Row[numRows];
             
             this.borderWidth = beadWidth/2;
             this.rowWidth = 12*beadWidth;
+            
+            this.position = new Point((width-13*beadWidth)/2,
+                                      (height-(3*numRows+2)*beadWidth)/2);
             
             for ( int i = 0; i < numRows; i++ ) {
                 Point rowPosition = new Point();
@@ -337,6 +339,8 @@ implements SurfaceHolder.Callback {
         mCanvasWidth = width;
         mCanvasHeight = height;
         rs = new RowSet(mCanvasWidth, mCanvasHeight, 5);
+        
+        // TODO This part should really be in surfaceCreated()...
         thread.setRunning(true);
         thread.start();
         showReadout();
