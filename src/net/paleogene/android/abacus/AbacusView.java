@@ -379,7 +379,9 @@ implements SurfaceHolder.Callback {
         case MotionEvent.ACTION_DOWN:
         case MotionEvent.ACTION_MOVE:
             if (motionBead > -1) {
-                motionRow.moveBeadTo(motionBead, (int) event.getX());
+                synchronized ( mSurfaceHolder ) {
+                    motionRow.moveBeadTo(motionBead, (int) event.getX());
+                }
             } else {
                 int x, y;
                 
