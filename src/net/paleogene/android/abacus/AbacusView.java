@@ -254,12 +254,13 @@ implements SurfaceHolder.Callback {
         }
 
         public void draw(Canvas canvas) {
-            final int rowThickness = 5;
-
+            int rowThickness = beadWidth/3;
+            rowThickness -= rowThickness % 2;
+            
             canvas.drawRect(position.x,
-                            position.y + beadHeight / 2 - rowThickness,
+                            position.y + beadHeight/2 - rowThickness/2,
                             position.x + width,
-                            position.y + beadHeight / 2 + rowThickness,
+                            position.y + beadHeight/2 + rowThickness/2,
                             rowPaint);
 
             for ( int i = 0; i < numBeads; i++ ) {
