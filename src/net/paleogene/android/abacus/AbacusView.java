@@ -3,11 +3,13 @@ package net.paleogene.android.abacus;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.RectF;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -177,7 +179,7 @@ implements SurfaceHolder.Callback {
         private Paint beadPaint, rowPaint;
         private RectF beadRectF = new RectF();
         
-        private Drawable beadImg;
+        private Drawable beadDrawable;
         
         public Row(Point position, int beadWidth, int beadHeight) {
             this.position = position;
@@ -187,8 +189,10 @@ implements SurfaceHolder.Callback {
             this.numBeads = 9;
             
             Resources res = getResources();
-            beadImg = res.getDrawable(R.drawable.bead);
-
+            Bitmap resBmp = BitmapFactory.decodeResource(res, R.drawable.bead);
+            Bitmap beadBmp = Bitmap.createScaledBitmap(resBmp, beadWidth, beadHeight, false);
+            beadDrawable = new BitmapDrawable(beadBmp);
+            
             beadPaint = new Paint();
             beadPaint.setColor(Color.argb(255, 73, 137, 30));
             beadPaint.setStyle(Paint.Style.FILL);
@@ -254,7 +258,7 @@ implements SurfaceHolder.Callback {
         }
 
         public void draw(Canvas canvas) {
-            int rowThickness = beadWidth/3;
+            int rowThickness = beadWidth/2;
             rowThickness -= rowThickness % 2;
             
             canvas.drawRect(position.x,
@@ -264,18 +268,18 @@ implements SurfaceHolder.Callback {
                             rowPaint);
 
             for ( int i = 0; i < numBeads; i++ ) {
+                /*
                 beadRectF.left   = (float) ( position.x + beads[i] );
                 beadRectF.right  = (float) ( position.x + beads[i] + beadWidth );
                 beadRectF.top    = (float) ( position.y );
                 beadRectF.bottom = (float) ( position.y + beadHeight );
                 canvas.drawOval(beadRectF, beadPaint);
-                /*
-                beadImg.setBounds(position.x + beads[i] - beadRX,
-                                  position.y,
-                                  position.x + beads[i] + beadRX,
-                                  position.y + 2*beadRY);
-                beadImg.draw(canvas);
                 */
+                beadDrawable.setBounds(position.x + beads[i],
+                                       position.y,
+                                       position.x + beads[i] + beadWidth,
+                                       position.y + beadHeight);
+                beadDrawable.draw(canvas);
             }
         }
 
