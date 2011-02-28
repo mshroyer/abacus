@@ -63,21 +63,21 @@ implements SurfaceHolder.Callback {
         private Paint paint;
         final int borderWidth = 10;
         private int width;
-        private int beadRY;
+        private int beadHeight;
         
-        public RowSet(Point position, int width, int beadRX, int beadRY,
+        public RowSet(Point position, int width, int beadWidth, int beadHeight,
                 int numBeads, int numRows) {
             this.position = position;
             this.numRows = numRows;
             this.rows = new Row[numRows];
             this.width = width;
-            this.beadRY = beadRY;
+            this.beadHeight = beadHeight;
             
             for ( int i = 0; i < numRows; i++ ) {
                 Point rowPosition = new Point();
                 rowPosition.x = position.x + borderWidth;
-                rowPosition.y = position.y + (3*i+1)*beadRY + borderWidth;
-                this.rows[i] = new Row(rowPosition, width, beadRX, beadRY, numBeads);
+                rowPosition.y = position.y + (3*i+1)*beadHeight/2 + borderWidth;
+                this.rows[i] = new Row(rowPosition, width, beadWidth, beadHeight, numBeads);
             }
             
             paint = new Paint();
@@ -89,8 +89,8 @@ implements SurfaceHolder.Callback {
             for ( int i = 0; i < numRows; i++ ) {
                 if ( ( x >= position.x + borderWidth )
                         && ( x <= position.x + borderWidth + width )
-                        && ( y >= position.y + (3*i+1)*beadRY + borderWidth )
-                        && ( y <= position.y + (3*i+3)*beadRY + borderWidth ) )
+                        && ( y >= position.y + (3*i+1)*beadHeight/2 + borderWidth )
+                        && ( y <= position.y + (3*i+3)*beadHeight/2 + borderWidth ) )
                     return rows[i];
             }
             return null;
@@ -128,17 +128,17 @@ implements SurfaceHolder.Callback {
             canvas.drawRect(position.x + width + borderWidth,
                             position.y,
                             position.x + width + 2*borderWidth,
-                            position.y + (3*numRows+1)*beadRY + 2*borderWidth,
+                            position.y + (3*numRows+1)*beadHeight/2 + 2*borderWidth,
                             paint);
             canvas.drawRect(position.x,
-                            position.y + (3*numRows+1)*beadRY + borderWidth,
+                            position.y + (3*numRows+1)*beadHeight/2 + borderWidth,
                             position.x + width + 2*borderWidth,
-                            position.y + (3*numRows+1)*beadRY + 2*borderWidth,
+                            position.y + (3*numRows+1)*beadHeight/2 + 2*borderWidth,
                             paint);
             canvas.drawRect(position.x,
                             position.y,
                             position.x + borderWidth,
-                            position.y + (3*numRows+1)*beadRY + 2*borderWidth,
+                            position.y + (3*numRows+1)*beadHeight/2 + 2*borderWidth,
                             paint);
 
             for ( Row r : rows ) {
@@ -152,14 +152,14 @@ implements SurfaceHolder.Callback {
         /** Location of the row's upper-right corner on the canvas */
         private Point position;
         
-        /** Total width of the row in pixels */
+        /** Total width of the row in real device pixels */
         private int width;
         
-        /** Half the beads' width */
-        private int beadRX;
+        /** The beads' width in real device pixels */
+        private int beadWidth;
         
-        /** Half the beads' height */
-        private int beadRY;
+        /** The beads' height in real device pixels */
+        private int beadHeight;
         
         /** The number of beads on this row */
         private int numBeads;
@@ -172,12 +172,12 @@ implements SurfaceHolder.Callback {
         
         private Drawable beadImg;
         
-        public Row(Point position, int width, int beadRX, int beadRY,
+        public Row(Point position, int width, int beadWidth, int beadHeight,
                 int numBeads) {
             this.position = position;
             this.width = width;
-            this.beadRX = beadRX;
-            this.beadRY = beadRY;
+            this.beadWidth = beadWidth;
+            this.beadHeight = beadHeight;
             this.numBeads = numBeads;
             
             Resources res = getResources();
@@ -195,7 +195,7 @@ implements SurfaceHolder.Callback {
             /* Place the beads starting on the left... */
             beads = new int[numBeads];
             for ( int i = 0; i < numBeads; i++ ) {
-                beads[i] = ( 2 * i + 1 ) * beadRX;
+                beads[i] = i * beadWidth;
             }
         }
         
@@ -204,24 +204,26 @@ implements SurfaceHolder.Callback {
         }
         
         public int moveBeadTo(int i, int x) {
-            return moveBeadToInternal(i, x - position.x - beadRX);
+            return moveBeadToInternal(i, x - position.x);
         }
 
         private int moveBeadToInternal(int i, int x) {
             // Don't allow beads to be dragged off the ends of the row
-            x = ( x >= beadRX )         ? x : beadRX;
-            x = ( x <= width - beadRX ) ? x : width - beadRX;
+            x = ( x >= 0 )                 ? x : 0;
+            x = ( x <= width - beadWidth ) ? x : width - beadWidth;
             
             // Handle collisions between beads
             if ( x > beads[i] ) {
+                // ... when moving right:
                 if ( ( i < numBeads - 1 )
-                        && ( x + beadRX > beads[i+1] - beadRX ) ) {
-                    x = moveBeadToInternal(i + 1, x + 2*beadRX) - 2*beadRX;
+                        && ( x + beadWidth > beads[i+1] ) ) {
+                    x = moveBeadToInternal(i + 1, x + beadWidth) - beadWidth;
                 }
             } else if ( x < beads[i] ){
+                // ... when moving left:
                 if ( ( i > 0 )
-                        && ( x - beadRX < beads[i-1] + beadRX ) ) {
-                    x = moveBeadToInternal(i - 1, x - 2*beadRX) + 2*beadRX;
+                        && ( x - beadWidth < beads[i-1] ) ) {
+                    x = moveBeadToInternal(i - 1, x - beadWidth) + beadWidth;
                 }
             }
             
@@ -234,12 +236,12 @@ implements SurfaceHolder.Callback {
          * @return Current value set on the row, or -1 if indeterminate
          */
         public int getValue() {
-            if ( beads[0] >= 4*beadRX )
+            if ( beads[0] >= 1.5 * beadWidth )
                 return 9;
             for ( int i = 0; i < numBeads - 1; i++ )
-                if ( beads[i+1] - beads[i] >= 5*beadRX ) 
+                if ( beads[i+1] - beads[i] >= 1.5 * beadWidth ) 
                     return 8 - i;
-            if ( width - beads[numBeads-1] >= 4*beadRX )
+            if ( beads[numBeads-1] <= width - 2.5 * beadWidth )
                 return 0;
             
             return -1;
@@ -249,33 +251,33 @@ implements SurfaceHolder.Callback {
             final int rowThickness = 5;
 
             canvas.drawRect(position.x,
-                            position.y + beadRY - rowThickness,
+                            position.y + beadHeight / 2 - rowThickness,
                             position.x + width,
-                            position.y + beadRY + rowThickness,
+                            position.y + beadHeight / 2 + rowThickness,
                             rowPaint);
 
             for ( int i = 0; i < numBeads; i++ ) {
-                /*
-                beadRectF.left   = (float) ( position.x + beads[i] - beadRX );
-                beadRectF.right  = (float) ( position.x + beads[i] + beadRX );
+                beadRectF.left   = (float) ( position.x + beads[i] );
+                beadRectF.right  = (float) ( position.x + beads[i] + beadWidth );
                 beadRectF.top    = (float) ( position.y );
-                beadRectF.bottom = (float) ( position.y + 2 * beadRY );
+                beadRectF.bottom = (float) ( position.y + beadHeight );
                 canvas.drawOval(beadRectF, beadPaint);
-                */
+                /*
                 beadImg.setBounds(position.x + beads[i] - beadRX,
                                   position.y,
                                   position.x + beads[i] + beadRX,
                                   position.y + 2*beadRY);
                 beadImg.draw(canvas);
+                */
             }
         }
 
         public int getBeadAt(int x, int y) {
             for ( int i = 0; i < numBeads; i++ ) {
-                if ( ( x >= ( position.x + beads[i] - beadRX ) ) 
-                        && ( x <= ( position.x + beads[i] + beadRX ) )
+                if ( ( x >= ( position.x + beads[i] ) ) 
+                        && ( x <= ( position.x + beads[i] + beadWidth ) )
                         && ( y >= ( position.y ) )
-                        && ( y <= ( position.y + 2 * beadRY ) ) ) {
+                        && ( y <= ( position.y + beadHeight ) ) ) {
                     return i;
                 }
             }
@@ -303,7 +305,7 @@ implements SurfaceHolder.Callback {
         SurfaceHolder holder = getHolder();
         holder.addCallback(this);
 
-        rs = new RowSet(new Point(60, 50), 330, 15, 25, 9, 5);
+        rs = new RowSet(new Point(60, 50), 330, 30, 50, 9, 5);
 
         // Just create the thread; it's started in surfaceCreated()
         thread = new AbacusThread(holder);
