@@ -45,14 +45,18 @@ implements SurfaceHolder.Callback {
         public void run() {
             while ( mRun ) {
                 Canvas c = null;
-                try {
-                    c = mSurfaceHolder.lockCanvas(null);
-                    synchronized ( mSurfaceHolder ) {
+                // TODO Analyze this -- any deadlocks?
+                synchronized ( mSurfaceHolder ) {
+                    try {
+                        c = mSurfaceHolder.lockCanvas(null);
                         doDraw(c);
+                    } finally {
+                        if ( c != null ) mSurfaceHolder.unlockCanvasAndPost(c);
                     }
-                } finally {
-                    if ( c != null )
-                        mSurfaceHolder.unlockCanvasAndPost(c);
+                    
+                    try {
+                        mSurfaceHolder.wait();
+                    } catch ( InterruptedException e ) {}
                 }
             }
         }
@@ -381,6 +385,7 @@ implements SurfaceHolder.Callback {
             if (motionBead > -1) {
                 synchronized ( mSurfaceHolder ) {
                     motionRow.moveBeadTo(motionBead, (int) event.getX());
+                    mSurfaceHolder.notify();
                 }
             } else {
                 int x, y;
