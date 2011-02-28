@@ -68,16 +68,16 @@ implements SurfaceHolder.Callback {
         
         public RowSet(int width, int height, int numRows) {
             
-            this.beadWidth = Math.min(height/(3*numRows+2), width/13);
+            this.beadWidth = Math.min(height/(3*numRows+2), width/12);
             this.beadHeight = 2 * beadWidth;
             
             this.numRows = numRows;
             this.rows = new Row[numRows];
             
             this.borderWidth = beadWidth/2;
-            this.rowWidth = 12*beadWidth;
+            this.rowWidth = 11*beadWidth;
             
-            this.position = new Point((width-13*beadWidth)/2,
+            this.position = new Point((width-12*beadWidth)/2,
                                       (height-(3*numRows+2)*beadWidth)/2);
             
             for ( int i = 0; i < numRows; i++ ) {
@@ -181,10 +181,10 @@ implements SurfaceHolder.Callback {
         
         public Row(Point position, int beadWidth, int beadHeight) {
             this.position = position;
-            this.width = 12*beadWidth;
+            this.width = 11*beadWidth;
             this.beadWidth = beadWidth;
             this.beadHeight = beadHeight;
-            this.numBeads = 10;
+            this.numBeads = 9;
             
             Resources res = getResources();
             beadImg = res.getDrawable(R.drawable.bead);
