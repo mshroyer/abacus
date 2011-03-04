@@ -12,6 +12,7 @@ import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -313,8 +314,8 @@ implements SurfaceHolder.Callback {
     private Row motionRow = null;
     private int motionBead = -1;
     
-    private int mCanvasWidth = 400;
-    private int mCanvasHeight = 400;
+    private int mCanvasWidth = 1;
+    private int mCanvasHeight = 1;
     
     public AbacusView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -329,7 +330,7 @@ implements SurfaceHolder.Callback {
 
     private void doDraw(Canvas canvas) {
         canvas.drawColor(Color.BLACK);
-        rs.draw(canvas);
+        if ( rs != null ) rs.draw(canvas);
     }
     
     private void showReadout() {
@@ -345,25 +346,38 @@ implements SurfaceHolder.Callback {
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width,
             int height) {
+        
+        Log.v("Abacus", "surfaceChanged()");
+        
         mCanvasWidth = width;
         mCanvasHeight = height;
         rs = new RowSet(mCanvasWidth, mCanvasHeight, 6);
         
+        synchronized ( mSurfaceHolder ) {
+            mSurfaceHolder.notify();
+        }
+        
         // TODO This part should really be in surfaceCreated()...
-        thread.setRunning(true);
-        thread.start();
         showReadout();
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
+        
+        Log.v("Abacus", "surfaceCreated()");
+
         if (thread.getState() == Thread.State.TERMINATED)
             thread = new AbacusThread(holder);
-
+        
+        thread.setRunning(true);
+        thread.start();
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
+        
+        Log.v("Abacus", "surfaceDestroyed()");
+
         // Wait until the thread has really shut down, otherwise it might touch
         // the surface after we return and explode...
         boolean retry = true;
@@ -376,7 +390,13 @@ implements SurfaceHolder.Callback {
             }
         }
     }
-
+    
+    public void redrawOnce() {
+        synchronized ( mSurfaceHolder ) {
+            mSurfaceHolder.notify();
+        }
+    }
+    
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch ( event.getAction() ) {
@@ -391,6 +411,7 @@ implements SurfaceHolder.Callback {
                 int x, y;
                 
                 /* Process historical events so that beads don't "slip" */
+                /* TODO Try interpolating between such events too... */
                 for ( int i = 0; i < event.getHistorySize(); i++ ) {
                     x = (int) event.getHistoricalX(i);
                     y = (int) event.getHistoricalY(i);
