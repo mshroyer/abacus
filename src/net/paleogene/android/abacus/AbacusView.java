@@ -47,10 +47,8 @@ implements SurfaceHolder.Callback {
             while ( mRun ) {
                 Canvas c = null;
                 try {
-                    synchronized ( mSurfaceHolder ) {
-                        c = mSurfaceHolder.lockCanvas(null);
-                        doDraw(c);
-                    }
+                    c = mSurfaceHolder.lockCanvas(null);
+                    doDraw(c);
                 } finally {
                     if ( c != null ) mSurfaceHolder.unlockCanvasAndPost(c);
                 }
@@ -318,9 +316,6 @@ implements SurfaceHolder.Callback {
         // Register interest in changes to the surface
         SurfaceHolder holder = getHolder();
         holder.addCallback(this);
-
-        // Just create the thread; it's started in surfaceCreated()
-        thread = new AbacusThread(holder);
     }
 
     private void doDraw(Canvas canvas) {
@@ -357,7 +352,7 @@ implements SurfaceHolder.Callback {
         
         Log.v("Abacus", "surfaceCreated()");
 
-        if (thread.getState() == Thread.State.TERMINATED)
+        if ( thread == null || thread.getState() == Thread.State.TERMINATED )
             thread = new AbacusThread(holder);
         
         thread.setRunning(true);
@@ -388,9 +383,7 @@ implements SurfaceHolder.Callback {
         case MotionEvent.ACTION_DOWN:
         case MotionEvent.ACTION_MOVE:
             if (motionBead > -1) {
-                synchronized ( mSurfaceHolder ) {
-                    motionRow.moveBeadTo(motionBead, (int) event.getX());
-                }
+                motionRow.moveBeadTo(motionBead, (int) event.getX());
             } else {
                 int x, y;
                 
