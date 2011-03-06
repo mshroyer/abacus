@@ -24,9 +24,9 @@ import android.widget.TextView;
 public class AbacusView extends SurfaceView
 implements SurfaceHolder.Callback {
 
-    class AbacusThread extends Thread {
+    class DrawThread extends Thread {
 
-        public AbacusThread(SurfaceHolder surfaceHolder) {
+        public DrawThread(SurfaceHolder surfaceHolder) {
             mSurfaceHolder = surfaceHolder;
         }
 
@@ -300,7 +300,7 @@ implements SurfaceHolder.Callback {
     /** Handle to the surface manager object we interact with */
     private SurfaceHolder mSurfaceHolder;
 
-    private AbacusThread thread;
+    private DrawThread thread;
 
     private RowSet rs;
 
@@ -353,7 +353,7 @@ implements SurfaceHolder.Callback {
         Log.v("Abacus", "surfaceCreated()");
 
         if ( thread == null || thread.getState() == Thread.State.TERMINATED )
-            thread = new AbacusThread(holder);
+            thread = new DrawThread(holder);
         
         thread.setRunning(true);
         thread.start();
