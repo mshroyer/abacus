@@ -25,9 +25,6 @@ public class AbacusView extends SurfaceView
 implements SurfaceHolder.Callback {
 
     class AbacusThread extends Thread {
-        
-        private long lastUpdate = 0;
-        private final long updateInterval = 1000000000 / 30;
 
         public AbacusThread(SurfaceHolder surfaceHolder) {
             mSurfaceHolder = surfaceHolder;
@@ -55,16 +52,6 @@ implements SurfaceHolder.Callback {
                 } finally {
                     if ( c != null ) mSurfaceHolder.unlockCanvasAndPost(c);
                 }
-                
-                long now = System.nanoTime();
-                long sleepTime = updateInterval + lastUpdate - now;
-                if ( sleepTime > 0 ) {
-                    try {
-                        Thread.sleep(sleepTime / 1000000, (int) sleepTime % 1000000);
-                    } catch ( InterruptedException e ) {
-                    }
-                }
-                lastUpdate = now;
             }
         }
     }
