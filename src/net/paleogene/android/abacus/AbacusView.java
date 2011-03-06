@@ -310,6 +310,9 @@ implements SurfaceHolder.Callback {
     private int mCanvasWidth = 1;
     private int mCanvasHeight = 1;
     
+    private long lastUpdate = 0;
+    private final long drawInterval = 1000000000 / 30;
+    
     public AbacusView(Context context, AttributeSet attrs) {
         super(context, attrs);
 
@@ -321,6 +324,16 @@ implements SurfaceHolder.Callback {
     private void doDraw(Canvas canvas) {
         canvas.drawColor(Color.BLACK);
         if ( rs != null ) rs.draw(canvas);
+        
+        long now = System.nanoTime();
+        if ( now - lastUpdate < drawInterval ) {
+            try {
+                long sleepTime = drawInterval + lastUpdate - now;
+                Thread.sleep(sleepTime / 1000000, (int) sleepTime % 1000000);
+            } catch ( InterruptedException e ) {
+            }
+        }
+        lastUpdate = now;
     }
     
     private void showReadout() {
