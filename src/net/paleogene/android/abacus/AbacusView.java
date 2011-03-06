@@ -46,18 +46,13 @@ implements SurfaceHolder.Callback {
         public void run() {
             while ( mRun ) {
                 Canvas c = null;
-                // TODO Analyze this -- any deadlocks?
-                synchronized ( mSurfaceHolder ) {
-                    try {
+                try {
+                    synchronized ( mSurfaceHolder ) {
                         c = mSurfaceHolder.lockCanvas(null);
                         doDraw(c);
-                    } finally {
-                        if ( c != null ) mSurfaceHolder.unlockCanvasAndPost(c);
                     }
-                    
-                    try {
-                        mSurfaceHolder.wait();
-                    } catch ( InterruptedException e ) {}
+                } finally {
+                    if ( c != null ) mSurfaceHolder.unlockCanvasAndPost(c);
                 }
             }
         }
@@ -353,10 +348,6 @@ implements SurfaceHolder.Callback {
         mCanvasHeight = height;
         rs = new RowSet(mCanvasWidth, mCanvasHeight, 6);
         
-        synchronized ( mSurfaceHolder ) {
-            mSurfaceHolder.notify();
-        }
-        
         // TODO This part should really be in surfaceCreated()...
         showReadout();
     }
@@ -391,12 +382,6 @@ implements SurfaceHolder.Callback {
         }
     }
     
-    public void redrawOnce() {
-        synchronized ( mSurfaceHolder ) {
-            mSurfaceHolder.notify();
-        }
-    }
-    
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch ( event.getAction() ) {
@@ -405,7 +390,6 @@ implements SurfaceHolder.Callback {
             if (motionBead > -1) {
                 synchronized ( mSurfaceHolder ) {
                     motionRow.moveBeadTo(motionBead, (int) event.getX());
-                    mSurfaceHolder.notify();
                 }
             } else {
                 int x, y;
