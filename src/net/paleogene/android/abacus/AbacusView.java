@@ -22,20 +22,19 @@ implements SurfaceHolder.Callback {
         }
 
         /**
-         * Used to signal the thread whether it should be running or not.
-         * Passing true allows the thread to run; passing false will shut it
-         * down if it's already running.  Calling start() after this was most
-         * recently called with false will result in an immediate shutdown.
-         *
-         * @param b true to run, false to shut down
+         * Politely ask the thread to stop running.
          */
-        public void setRunning(boolean b) {
-            mRun = b;
+        public void stopDrawing() {
+            interrupt();
+        }
+        
+        public void pauseDrawing() {
+            
         }
 
         @Override
         public void run() {
-            while ( mRun ) {
+            while ( ! isInterrupted() ) {
                 Canvas c = null;
                 try {
                     c = mSurfaceHolder.lockCanvas(null);
@@ -48,9 +47,6 @@ implements SurfaceHolder.Callback {
             }
         }
     }
-
-    /** Indicates whether the surface has been created and is ready to draw */
-    private boolean mRun = false;
 
     /** Handle to the surface manager object we interact with */
     private SurfaceHolder mSurfaceHolder;
@@ -114,7 +110,6 @@ implements SurfaceHolder.Callback {
         if ( thread == null || thread.getState() == Thread.State.TERMINATED )
             thread = new DrawThread(holder);
         
-        thread.setRunning(true);
         thread.start();
     }
 
@@ -126,7 +121,7 @@ implements SurfaceHolder.Callback {
         // Wait until the thread has really shut down, otherwise it might touch
         // the surface after we return and explode...
         boolean retry = true;
-        thread.setRunning(false);
+        thread.stopDrawing();
         while ( retry ) {
             try {
                 thread.join();
