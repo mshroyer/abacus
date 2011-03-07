@@ -34,7 +34,14 @@ implements SurfaceHolder.Callback {
             interrupt();
         }
         
-        public synchronized void pauseDrawing()
+        /**
+         * Pause the drawing thread by acquiring the internal draw mutex.
+         * Only a single thread should be allowed to call either this method
+         * or resumeDrawing().
+         * 
+         * @throws InterruptedException
+         */
+        public void pauseDrawing()
         throws InterruptedException {
             if ( ! isPaused ) {
                 sem.acquire();
@@ -42,7 +49,12 @@ implements SurfaceHolder.Callback {
             }
         }
         
-        public synchronized void unpauseDrawing() {
+        /**
+         * Allow the drawing thread to resume by releasing the internal draw
+         * mutex.  Only a single thread should be allowed to call either this
+         * method or pauseDrawing().
+         */
+        public void resumeDrawing() {
             if ( isPaused ) {
                 sem.release();
                 isPaused = false;
@@ -178,7 +190,7 @@ implements SurfaceHolder.Callback {
                     if ( motionRow != null ) {
                         motionBead = motionRow.getBeadAt(x, y);
                         if ( motionBead > -1 ) {
-                            thread.unpauseDrawing();
+                            thread.resumeDrawing();
                             break;
                         }
                     }
@@ -191,7 +203,7 @@ implements SurfaceHolder.Callback {
                     if ( motionRow != null ) {
                         motionBead = motionRow.getBeadAt(x, y);
                         if ( motionBead > -1 )
-                            thread.unpauseDrawing();
+                            thread.resumeDrawing();
                     }
                 }
             }
