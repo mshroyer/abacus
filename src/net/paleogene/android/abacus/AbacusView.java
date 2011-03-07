@@ -1,5 +1,7 @@
 package net.paleogene.android.abacus;
 
+import java.util.concurrent.Semaphore;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -16,6 +18,10 @@ public class AbacusView extends SurfaceView
 implements SurfaceHolder.Callback {
 
     class DrawThread extends Thread {
+        
+        private Semaphore sem = new Semaphore(1);
+        
+        private boolean isPaused = false;
 
         public DrawThread(SurfaceHolder surfaceHolder) {
             mSurfaceHolder = surfaceHolder;
@@ -28,13 +34,30 @@ implements SurfaceHolder.Callback {
             interrupt();
         }
         
-        public void pauseDrawing() {
-            
+        public synchronized void pauseDrawing()
+        throws InterruptedException {
+            if ( ! isPaused ) {
+                sem.acquire();
+                isPaused = true;
+            }
+        }
+        
+        public synchronized void unpauseDrawing() {
+            if ( isPaused ) {
+                sem.release();
+                isPaused = false;
+            }
         }
 
         @Override
         public void run() {
             while ( ! isInterrupted() ) {
+                try {
+                    sem.acquire();
+                } catch ( InterruptedException e ) {
+                    return;
+                }
+
                 Canvas c = null;
                 try {
                     c = mSurfaceHolder.lockCanvas(null);
@@ -44,6 +67,8 @@ implements SurfaceHolder.Callback {
                 } finally {
                     if ( c != null ) mSurfaceHolder.unlockCanvasAndPost(c);
                 }
+                
+                sem.release();
             }
         }
     }
@@ -152,8 +177,10 @@ implements SurfaceHolder.Callback {
                     motionRow = rs.getRowAt(x, y);
                     if ( motionRow != null ) {
                         motionBead = motionRow.getBeadAt(x, y);
-                        if ( motionBead > -1 )
+                        if ( motionBead > -1 ) {
+                            thread.unpauseDrawing();
                             break;
+                        }
                     }
                 }
 
@@ -161,8 +188,11 @@ implements SurfaceHolder.Callback {
                     x = (int) event.getX();
                     y = (int) event.getY();
                     motionRow = rs.getRowAt(x, y);
-                    if ( motionRow != null )
+                    if ( motionRow != null ) {
                         motionBead = motionRow.getBeadAt(x, y);
+                        if ( motionBead > -1 )
+                            thread.unpauseDrawing();
+                    }
                 }
             }
             return true;
@@ -172,6 +202,10 @@ implements SurfaceHolder.Callback {
             if ( motionBead > -1 ) showReadout();
             motionRow = null;
             motionBead = -1;
+            try {
+                thread.pauseDrawing();
+            } catch ( InterruptedException e ) {
+            }
             return true;
 
         default:
