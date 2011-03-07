@@ -6,7 +6,6 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -128,22 +127,15 @@ implements SurfaceHolder.Callback {
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width,
             int height) {
-        
-        Log.v("Abacus", "surfaceChanged()");
-        
         mCanvasWidth = width;
         mCanvasHeight = height;
         rs = new AbacusEngine(mCanvasWidth, mCanvasHeight, 6, context);
         
-        // TODO This part should really be in surfaceCreated()...
         showReadout();
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        
-        Log.v("Abacus", "surfaceCreated()");
-
         if ( thread == null || thread.getState() == Thread.State.TERMINATED )
             thread = new DrawThread(holder);
         
@@ -152,9 +144,6 @@ implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        
-        Log.v("Abacus", "surfaceDestroyed()");
-
         // Wait until the thread has really shut down, otherwise it might touch
         // the surface after we return and explode...
         boolean retry = true;
