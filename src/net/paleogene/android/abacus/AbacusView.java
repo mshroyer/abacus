@@ -5,6 +5,7 @@ import java.util.concurrent.Semaphore;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.os.Bundle;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -89,7 +90,7 @@ implements SurfaceHolder.Callback {
 
     private DrawThread thread;
 
-    private AbacusEngine rs;
+    private AbacusEngine engine;
 
     private RowEngine motionRow = null;
     private int motionBead = -1;
@@ -98,6 +99,8 @@ implements SurfaceHolder.Callback {
     private int mCanvasHeight = 1;
     
     private Context context;
+    
+    private AbacusEngine.BeadState beadState;
     
     public AbacusView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -111,25 +114,37 @@ implements SurfaceHolder.Callback {
 
     private void doDraw(Canvas canvas) {
         canvas.drawColor(Color.BLACK);
-        if ( rs != null ) rs.draw(canvas);
+        if ( engine != null ) engine.draw(canvas);
     }
     
     private void showReadout() {
         if ( Abacus.readout != null ) {
-            int result = rs.getValue();
+            int result = engine.getValue();
             if ( result > -1 )
                 Abacus.readout.setText(Integer.toString(result));
             else
                 Abacus.readout.setText("?");
         }
     }
-
+    
+    public void saveState(Bundle state) {
+        beadState = engine.getState();
+        state.putSerializable("beadState", beadState);
+    }
+    
+    public void restoreState(Bundle state) {
+        beadState = (AbacusEngine.BeadState) state.getSerializable("beadState");
+        engine.setState(beadState);
+    }
+    
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width,
             int height) {
         mCanvasWidth = width;
         mCanvasHeight = height;
-        rs = new AbacusEngine(mCanvasWidth, mCanvasHeight, 6, context);
+        engine = new AbacusEngine(mCanvasWidth, mCanvasHeight, 6, context);
+        if ( beadState != null )
+            engine.setState(beadState);
         
         showReadout();
     }
@@ -175,7 +190,7 @@ implements SurfaceHolder.Callback {
                     x = (int) event.getHistoricalX(i);
                     y = (int) event.getHistoricalY(i);
                     
-                    motionRow = rs.getRowAt(x, y);
+                    motionRow = engine.getRowAt(x, y);
                     if ( motionRow != null ) {
                         motionBead = motionRow.getBeadAt(x, y);
                         if ( motionBead > -1 ) {
@@ -188,7 +203,7 @@ implements SurfaceHolder.Callback {
                 if ( motionBead == -1 ) {
                     x = (int) event.getX();
                     y = (int) event.getY();
-                    motionRow = rs.getRowAt(x, y);
+                    motionRow = engine.getRowAt(x, y);
                     if ( motionRow != null ) {
                         motionBead = motionRow.getBeadAt(x, y);
                         if ( motionBead > -1 )

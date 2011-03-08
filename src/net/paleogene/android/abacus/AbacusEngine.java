@@ -1,5 +1,7 @@
 package net.paleogene.android.abacus;
 
+import java.io.Serializable;
+
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -10,8 +12,19 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Bundle;
+import android.util.Log;
 
 public class AbacusEngine {
+    
+    public static class BeadState implements Serializable {
+        public static final long serialVersionUID = 3121933153069222515L;
+
+        public int numRows;
+        public int numBeads;
+        public double[][] positions; 
+    }
+    
     private Point position;
     private int numRows;
     public RowEngine[] rows;
@@ -110,6 +123,29 @@ public class AbacusEngine {
 
         for ( RowEngine r : rows ) {
             r.draw(canvas);
+        }
+    }
+    
+    public BeadState getState() {
+        BeadState beadState = new BeadState();
+
+        beadState.numRows = numRows;
+        beadState.numBeads = 9;
+        beadState.positions = new double[beadState.numRows][beadState.numBeads];
+        for ( int i = 0; i < beadState.numRows; i++ ) {
+            for ( int j = 0; j < beadState.numBeads; j++ ) {
+                beadState.positions[i][j] = ( (double) rows[i].getBeadPosition(j) ) / rowWidth;
+            }
+        }
+
+        return beadState;
+    }
+    
+    public void setState(BeadState beadState) {
+        for ( int i = 0; i < beadState.numRows; i++ ) {
+            for ( int j = 0; j < beadState.numBeads; j++ ) {
+                rows[i].moveBeadToInternal(j, (int) (beadState.positions[i][j] * rowWidth));
+            }
         }
     }
 }

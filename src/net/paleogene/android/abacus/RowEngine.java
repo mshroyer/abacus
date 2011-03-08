@@ -62,7 +62,7 @@ public class RowEngine {
         return moveBeadToInternal(i, x - position.x);
     }
 
-    private int moveBeadToInternal(int i, int x) {
+    public int moveBeadToInternal(int i, int x) {
         // Don't allow beads to be dragged off the ends of the row
         x = ( x >= 0 )                 ? x : 0;
         x = ( x <= width - beadWidth ) ? x : width - beadWidth;
@@ -138,5 +138,9 @@ public class RowEngine {
             }
         }
         return -1;
+    }
+    
+    public int getBeadPosition(int i) {
+        return beads[i];
     }
 }
